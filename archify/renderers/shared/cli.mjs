@@ -61,7 +61,7 @@ export function writeDiagram({ outPath, template, diagramType, meta, svg, cards,
     svg,
     cards: renderCards(cards),
     locale: meta.locale,
-    visualPreset: meta.visual_preset || 'classic',
+    visualPreset: meta.visual_preset || 'macos',
     guidedViews: meta.views || [],
     sourceEvidence,
   }));
@@ -148,7 +148,7 @@ export function validateGuidedViews(diagramType, diagram) {
 // Accessible name for the generated diagram SVG.
 export function svgRootAttrs(meta) {
   const animation = meta.animation === 'trace' ? ' data-animation="trace"' : '';
-  const preset = ` data-preset="${esc(meta.visual_preset || 'classic')}"`;
+  const preset = ` data-preset="${esc(meta.visual_preset || 'macos')}"`;
   const engineeringProfile = meta.engineering_profile
     ? ` data-engineering-profile="${esc(meta.engineering_profile)}"`
     : '';
