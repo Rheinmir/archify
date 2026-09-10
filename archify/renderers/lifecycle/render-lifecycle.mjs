@@ -153,9 +153,12 @@ function validateLifecycle() {
   // A `terminal` lane places states at outcomeY, so its floor is strictly higher
   // than the event-only floor; reporting 566 for that case sent authors into an
   // unreachable "state exceeds the vertical lifecycle area" loop.
+  // 566 was the floor when the outcome band was always reserved. A diagram that
+  // never uses it only needs the event band plus room for a bottom channel route,
+  // so charging it the outcome reserve produced a tall empty tail.
   const minViewBoxHeight = usesOutcomeBand()
     ? layout.outcomeY + layout.outcomeH + 122
-    : 566;
+    : layout.eventY + layout.eventH + 52 + 122;
   if (viewBox[1] < minViewBoxHeight) {
     problems.push(`viewBox height ${viewBox[1]} is too short for ${usesOutcomeBand() ? 'a lane id "terminal" in the outcome band' : 'the fixed band layout'} — set meta.viewBox[1] to at least ${minViewBoxHeight}.`);
   }

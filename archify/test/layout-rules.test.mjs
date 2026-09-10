@@ -251,7 +251,11 @@ const CASES = [
       failed.col = approval.col;
     }, ['less than 10px apart']],
   ['lifecycle: viewBox height below schema min', 'lifecycle',
-    (d) => { d.meta.viewBox = [980, 565]; }, ['566']],
+    (d) => { d.meta.viewBox = [980, 509]; }, ['510']],
+  // A lifecycle that uses the reserved `terminal` outcome band needs a taller
+  // canvas than the two-band floor, and the message must name that number.
+  ['lifecycle: outcome band needs its own taller floor', 'lifecycle',
+    (d) => { d.meta.viewBox = [980, 566]; }, ['630']],
   ['lifecycle: state sublabel wider than its legible minimum', 'lifecycle',
     (d) => { d.states[0].sublabel = 'This supporting sentence is far too long for one lifecycle state box'; },
     ['Sublabel', 'legible', 'increase state.width']],

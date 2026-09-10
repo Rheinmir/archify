@@ -81,7 +81,7 @@
             },
             {
               "type": "number",
-              "minimum": 566
+              "minimum": 510
             }
           ],
           "items": false,
