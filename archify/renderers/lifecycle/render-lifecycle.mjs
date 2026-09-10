@@ -11,6 +11,7 @@ import {
   asArray,
   isFinitePoint,
   rectsOverlap,
+  segmentIntersectsRect,
   cleanEndpointSideProblems,
   cleanFlowProblems,
   cleanCrossingProblems,
@@ -538,12 +539,36 @@ function renderLegend() {
 }
 
 function renderLifecycleRail() {
-  const mainCols = [...states.values()]
-    .filter((state) => bandFor(state.lane) === 'phase')
-    .map((state) => state.col);
-  if (!mainCols.length) return '';
-  const railEnd = layout.phaseXs[Math.max(...mainCols)] + 38;
-  return `        <path d="M 154 ${layout.phaseY + 31} L ${railEnd} ${layout.phaseY + 31}" class="a-emphasis" stroke-width="2.2" marker-end="url(#arrowhead-emphasis)"/>`;
+  const mains = [...states.values()].filter((state) => bandFor(state.lane) === 'phase');
+  if (!mains.length) return '';
+  const railEnd = layout.phaseXs[Math.max(...mains.map((state) => state.col))] + 38;
+  // Sit on the centre line the phase transitions use (state.cy). A fixed
+  // phaseY + phaseH/2 drew a second line beside every arrow once a spec set
+  // its own state height (height 58 → rail 2px below the arrows).
+  const y = mains.reduce((first, state) => (state.col < first.col ? state : first)).cy;
+  return `        <path d="M 154 ${y} L ${railEnd} ${y}" class="a-emphasis" stroke-width="2.2" marker-end="url(#arrowhead-emphasis)"/>`;
+}
+
+// Band titles sit under the transition layer, so a route that crosses one (a
+// bottom-channel loop climbing into a column-1 state) strikes the text through.
+// Re-draw only the crossed titles above the routes on the same c-mask plate the
+// transition labels use; diagrams with no crossing render byte-identical.
+function renderCrossedBandTitles() {
+  const titles = bandTitles();
+  const bands = [[100, `01 / ${titles[0]}`], [252, `02 / ${titles[1]}`]];
+  if (usesOutcomeBand()) bands.push([424, `03 / ${titles[2]}`]);
+  const segments = asArray(lifecycle.transitions).flatMap((transition) => {
+    const points = pathFor(transition).points || [];
+    return points.slice(1).map((end, i) => ({ start: points[i], end }));
+  });
+  const crossed = bands.map(([y, text]) => {
+    // 4.7/unit: measured on a rendered 10px/600 Roboto band title (6.1 left a visible plate past the text).
+    const rect = { x: 70, y: y - 10, width: textUnits(text) * 4.7 + 8, height: 14 };
+    if (!segments.some((segment) => segmentIntersectsRect(segment, rect))) return '';
+    return `        <rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="3" class="c-mask" aria-hidden="true"/>
+        <text x="72" y="${y}" class="t-dim" font-size="10" font-weight="600" aria-hidden="true">${esc(text)}</text>`;
+  }).filter(Boolean);
+  return crossed.length ? `\n${crossed.join('\n')}` : '';
 }
 
 function renderSvg() {
@@ -561,7 +586,7 @@ ${renderBandsForDiagram()}
 ${renderLifecycleRail()}
 
         <!-- Transition paths -->
-${asArray(lifecycle.transitions).map(renderTransitionPath).join('\n')}
+${asArray(lifecycle.transitions).map(renderTransitionPath).join('\n')}${renderCrossedBandTitles()}
 
         <!-- States -->
 ${[...states.values()].map(renderState).join('\n\n')}
