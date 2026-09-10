@@ -57,7 +57,7 @@ test('all five renderers expose one reader-controlled visual style picker', () =
 test('style selection synchronizes page, picker, and canonical SVG without touching geometry', () => {
   const html = render('architecture');
   const runtime = presetRuntime(html);
-  assert.match(runtime, /\['classic', 'signal-flow', 'blueprint', 'editorial'\]/);
+  assert.match(runtime, /\['classic', 'signal-flow', 'blueprint', 'editorial', 'macos'\]/);
   assert.match(runtime, /html\.setAttribute\('data-preset', preset\)/);
   assert.match(runtime, /svg\.setAttribute\('data-preset', preset\)/);
   assert.match(runtime, /data-preset-option/);
@@ -65,11 +65,11 @@ test('style selection synchronizes page, picker, and canonical SVG without touch
   assert.match(runtime, /return \{ cycle: cycle, apply: apply, current: current, authored: authored, open: open, close: close, isOpen: isOpen \}/);
 });
 
-test('omitted visual preset opens as Classic and theme switching cannot change it', () => {
+test('omitted visual preset opens as macOS and theme switching cannot change it', () => {
   const html = render('architecture');
   const themeRuntime = html.match(/Archify\.theme = \(function \(\) \{[\s\S]*?\n    \}\)\(\);/)?.[0] || '';
-  assert.match(html, /<html lang="en" data-theme="dark" data-preset="classic">/);
-  assert.match(svgBlock(html), /<svg\b[^>]* data-preset="classic"/);
+  assert.match(html, /<html lang="en" data-theme="dark" data-preset="macos">/);
+  assert.match(svgBlock(html), /<svg\b[^>]* data-preset="macos"/);
   assert.match(themeRuntime, /html\.setAttribute\('data-theme', theme\)/);
   assert.doesNotMatch(themeRuntime, /data-preset|Archify\.preset/);
 });

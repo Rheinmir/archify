@@ -52,8 +52,18 @@ test('static output omits animation attributes', () => {
   assert.doesNotMatch(svg, /data-animate=/);
 });
 
-test('classic preset remains the default for existing diagrams', () => {
+// Fork contract (Rheinmir/archify, macos-roboto): an omitted preset opens as
+// `macos`. Upstream asserted `classic` here; the fork changed the default on
+// purpose, so the test encodes the fork's decision — and keeps proving that an
+// explicit `classic` still renders exactly as upstream intended.
+test('macos preset is the default for existing diagrams', () => {
   const html = render('architecture', CASES.architecture, null, null);
+  assert.match(html, /<html lang="en" data-theme="dark" data-preset="macos">/);
+  assert.match(svgBlock(html), /data-preset="macos"/);
+});
+
+test('an explicit classic preset still reaches the page and SVG', () => {
+  const html = render('architecture', CASES.architecture, null, 'classic');
   assert.match(html, /<html lang="en" data-theme="dark" data-preset="classic">/);
   assert.match(svgBlock(html), /data-preset="classic"/);
 });

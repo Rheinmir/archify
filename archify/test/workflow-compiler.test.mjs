@@ -258,8 +258,16 @@ function assertReadableAdjacentResult(result, { label, widths = [92, 92] } = {})
   }
 }
 
+// The fork (Rheinmir/archify) opens an omitted preset as `macos`, which only
+// renames the SVG's data-preset attribute. These two baselines guard GEOMETRY,
+// so they pin the upstream `classic` preset: measured 2026-09-10, pinning
+// reproduces both upstream hashes byte-for-byte, proving layout is untouched.
+function pinUpstreamPreset(workflow) {
+  return { ...workflow, meta: { ...(workflow.meta || {}), visual_preset: 'classic' } };
+}
+
 test('fixed-v1 compiler preserves the official workflow baseline SVG byte-for-byte', () => {
-  const workflow = readJson(path.join(__dirname, 'fixtures', 'v1-baseline', 'agent-tool-call.workflow.json'));
+  const workflow = pinUpstreamPreset(readJson(path.join(__dirname, 'fixtures', 'v1-baseline', 'agent-tool-call.workflow.json')));
   const result = compileSuccessfully(workflow);
   assert.equal(result.receipt.contract, 'fixed-v1');
   assert.equal(
@@ -269,11 +277,11 @@ test('fixed-v1 compiler preserves the official workflow baseline SVG byte-for-by
 });
 
 test('fixed-v1 compiler preserves the exact 700x400 compatibility geometry', () => {
-  const workflow = readJson(path.join(
+  const workflow = pinUpstreamPreset(readJson(path.join(
     __dirname,
     'fixtures',
     'v1-workflow-700x400.workflow.json',
-  ));
+  )));
 
   const result = compileSuccessfully(workflow);
   assert.equal(result.receipt.contract, 'fixed-v1');
