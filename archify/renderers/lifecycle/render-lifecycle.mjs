@@ -104,6 +104,12 @@ function bandFor(lane) {
   return 'event';
 }
 
+// The reserved outcome band only earns its vertical budget when a state actually
+// lives there. Diagrams without a `terminal` lane must not pay for an empty band.
+function usesOutcomeBand() {
+  return asArray(lifecycle.states).some((state) => bandFor(state.lane) === 'outcome');
+}
+
 function measureState(state) {
   const isPhase = bandFor(state.lane) === 'phase';
   const isOutcome = bandFor(state.lane) === 'outcome';
@@ -144,8 +150,14 @@ function validateLifecycle() {
 
   // The three bands are fixed at y=112/264/436. Preserve the original
   // outcome/legend reserve even though measured legend rows now sit lower.
-  if (lifecycleAreaBottom() + 4 < 448) {
-    problems.push(`viewBox height ${viewBox[1]} is too short for the fixed band layout — set meta.viewBox[1] to at least 566.`);
+  // A `terminal` lane places states at outcomeY, so its floor is strictly higher
+  // than the event-only floor; reporting 566 for that case sent authors into an
+  // unreachable "state exceeds the vertical lifecycle area" loop.
+  const minViewBoxHeight = usesOutcomeBand()
+    ? layout.outcomeY + layout.outcomeH + 122
+    : 566;
+  if (viewBox[1] < minViewBoxHeight) {
+    problems.push(`viewBox height ${viewBox[1]} is too short for ${usesOutcomeBand() ? 'a lane id "terminal" in the outcome band' : 'the fixed band layout'} — set meta.viewBox[1] to at least ${minViewBoxHeight}.`);
   }
 
   const laneIds = new Set(asArray(lifecycle.lanes).map((lane) => lane.id));
@@ -429,6 +441,15 @@ function renderBands() {
         <text x="72" y="424" class="t-dim" font-size="10" font-weight="600">03 / ${esc(titles[2])}</text>`;
 }
 
+function renderBandsForDiagram() {
+  const bands = renderBands();
+  if (usesOutcomeBand()) return bands;
+  // Drop the reserved outcome divider/label when no state occupies it: an empty
+  // labelled band reads as missing content and costs page height the desktop
+  // containment rule then refuses.
+  return bands.split('\n').slice(0, 4).join('\n');
+}
+
 function renderState(state) {
   const fill = typeClass[state.type] || typeClass.neutral;
   const accent = textClass[state.type] || 't-muted';
@@ -531,7 +552,7 @@ ${renderDefinitions()}
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Lifecycle bands -->
-${renderBands()}
+${renderBandsForDiagram()}
 
         <!-- Primary lifecycle rail -->
 ${renderLifecycleRail()}
