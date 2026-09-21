@@ -522,6 +522,16 @@ export function brandLabelFitWidth(node, width) {
   return brandMarkFor(node) ? Math.max(1, width - 48) : width;
 }
 
+// Like brandLabelFitWidth, but also keeps a centred label out from under the role sigil (11px, inset 6px from the
+// top-left) on short nodes (seen 2026-09-20: "Task PLAN.md" in a 92px node ran 11x9px under the glyph). Only labels
+// wider than the span between the sigil and its mirror are fitted to that span, so short labels do not reflow.
+// NOT used by the workflow compiler: fixed-v1 output is a byte-for-byte compatibility contract.
+export function sigilSafeLabelFitWidth(node, width) {
+  if (brandMarkFor(node)) return Math.max(1, width - 48);
+  const clear = width - 2 * (6 + 11 + 4);
+  return textUnits(node.label) * 11 * 0.6 > clear ? Math.max(1, clear) : width;
+}
+
 export function brandTopRailProblem(node, width, minimumFontSize, subject = 'Node') {
   if (!brandMarkFor(node)) return null;
   const available = width - 48;
