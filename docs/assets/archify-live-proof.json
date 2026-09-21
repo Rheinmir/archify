@@ -7,8 +7,8 @@
   "fps": 10,
   "frameCount": 54,
   "durationSeconds": 5.4,
-  "bytes": 1574998,
-  "sha256": "3cffee5e7c989657e37fff7456e638c3df425da6aec286b25ae84c09917fa8d9",
+  "bytes": 1572989,
+  "sha256": "615ef525f799ea87a8d19f3831651eff40a820161e491665bf0a8d1c5e0c4024",
   "scenes": [
     {
       "id": "signal-flow",

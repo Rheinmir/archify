@@ -14,7 +14,7 @@ import {
   renderLegend as renderResolvedLegend,
 } from '../shared/legend.mjs';
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth } from '../shared/text-fit.mjs';
-import { brandLabelFitWidth, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
+import { brandLabelFitWidth, sigilSafeLabelFitWidth, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
 import { translateMessage as i18nText } from '../shared/i18n.mjs';
 import {
   createMappedWorkflowCandidate,
@@ -4191,7 +4191,10 @@ function renderNode(node) {
   const fill = componentFill[node.type] || 'c-external';
   const accent = componentText[node.type] || 't-muted';
   const hasSub = node.sublabel != null && node.sublabel !== '';
-  const labelFontSize = fittedNodeFontSize(node.label, brandLabelFitWidth(node, node.width), nodeTextFit.labelPreferred, nodeTextFit.labelMinimum);
+  // fixed-v1 (schema_version 1) là hợp đồng byte-for-byte nên giữ nguyên cách co nhãn cũ;
+  // readable-v2 được phép co nhãn tránh sigil vai trò (xem sigilSafeLabelFitWidth).
+  const fitWidth = workflow.schema_version === 2 ? sigilSafeLabelFitWidth : brandLabelFitWidth;
+  const labelFontSize = fittedNodeFontSize(node.label, fitWidth(node, node.width), nodeTextFit.labelPreferred, nodeTextFit.labelMinimum);
   const sublabelFontSize = hasSub
     ? fittedNodeFontSize(node.sublabel, node.width, nodeTextFit.sublabelPreferred, nodeTextFit.sublabelMinimum)
     : nodeTextFit.sublabelPreferred;
@@ -4202,13 +4205,22 @@ function renderNode(node) {
     ? `\n        <text data-detail="fine" x="${node.cx}" y="${node.y + node.height - 12}" class="${accent}" font-size="${fittedNodeFontSize(node.tag, node.width, nodeTextFit.tagPreferred, nodeTextFit.tagMinimum)}" text-anchor="middle">${esc(node.tag)}</text>`
     : '';
   const brand = renderBrandMark(node, { x: node.x + node.width - 22, y: node.y + 6 });
+  // Node hẹp: nhãn căn giữa co hết cỡ vẫn thò sang trái tới dưới sigil vai trò (sigil chiếm
+  // [x+6, x+17] x [y+6, y+17]). Hạ chân chữ xuống dưới đáy sigil — chỉ với node THẬT SỰ chạm,
+  // nên node rộng giữ nguyên vị trí cũ. fixed-v1 không đổi: output là hợp đồng byte-for-byte.
+  const labelBaseline = node.y + 21;
+  const labelReachesSigil = workflow.schema_version === 2
+    && node.cx - (textUnits(node.label) * labelFontSize * 0.6) / 2 < node.x + 18;
+  const labelY = labelReachesSigil
+    ? Math.max(labelBaseline, node.y + 18 + labelFontSize * 0.75)
+    : labelBaseline;
   const passport = { kind: node.type, sublabel: node.sublabel, tag: node.tag, context: nodeContext(node), ...brandMetadataFor(node) };
   return `        <g ${focusNodeAttrs(node.id, node.label, passport, workflow.meta.locale)}>
           ${focusNodeTitle(node.label, passport)}
           <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" class="c-mask"/>
           <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" class="${fill}"${animateAttr(workflow.meta, 'node', nodeStep(node))} stroke-width="1.5"/>
           ${renderSemanticSigil(node.type, { x: node.x + 6, y: node.y + 6 })}${brand ? `\n          ${brand}` : ''}
-          <text data-node-label=""${hasSub ? ' data-detail-anchor=""' : ''} x="${node.cx}" y="${node.y + 21}" class="t-primary" font-size="${labelFontSize}" font-weight="600" text-anchor="middle">${esc(node.label)}</text>${sub}${tag}
+          <text data-node-label=""${hasSub ? ' data-detail-anchor=""' : ''} x="${node.cx}" y="${labelY}" class="t-primary" font-size="${labelFontSize}" font-weight="600" text-anchor="middle">${esc(node.label)}</text>${sub}${tag}
         </g>`;
 }
 
